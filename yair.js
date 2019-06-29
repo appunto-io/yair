@@ -1,5 +1,18 @@
 #!/usr/bin/env node
 
+const ANDROID_RESOLUTIONS = [
+  {path : 'mipmap-xxxhdpi', size : 192},
+  {path : 'mipmap-xxhdpi',  size : 144},
+  {path : 'mipmap-xhdpi',   size : 96},
+  {path : 'mipmap-hdpi',    size : 72},
+  {path : 'mipmap-mdpi',    size : 48},
+  {path : 'mipmap-ldpi',    size : 36}
+];
+
+const IOS_RESOLUTIONS = {
+
+};
+
 // yair <source-image> [<output-directory>] --masks <mask-directory>
 const jimp = require('jimp');
 const fs   = require('fs');
@@ -54,7 +67,31 @@ if (!fs.existsSync(output) || !fs.statSync(output).isDirectory()) {
   process.exit(1);
 }
 
+
+
+const processImage = async (image, name) => {
+  fs.mkdirSync(`${output}/iOS/${name}.appiconset`);
+  fs.mkdirSync(`${output}/Android/${name}`);
+
+  for (let index = 0; index < ANDROID_RESOLUTIONS.length; index++) {
+    const resolution = ANDROID_RESOLUTIONS[index];
+
+    const clonedImage = image.clone();
+
+    await clonedImage
+      .resize(resolution.size, resolution.size)
+      .writeAsync(`${output}/Android/${name}/res/${resolution.path}/ic_launcher.png`);
+  }
+};
+
+
+/*
+Execute resizer program
+ */
 (async () => {
+  fs.mkdirSync(`${output}/iOS`);
+  fs.mkdirSync(`${output}/Android`);
+
   const images = await Promise.all([
     jimp.read(source),
     ...masks.map(
@@ -63,7 +100,16 @@ if (!fs.existsSync(output) || !fs.statSync(output).isDirectory()) {
   ]);
 
   const [sourceImage, ...masksImages] = images;
+
+  /*
+  First export a resized copy of image without masks
+   */
+  processImage(sourceImage, 'default');
+
+
+
 })()
+
 
 
 // const source = jimp(source)
