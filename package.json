@@ -1,0 +1,24 @@
+{
+  "name": "@appunto/yair",
+  "version": "0.0.1",
+  "description": "Yet Another Icon Resizer",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/appunto-io/yair.git"
+  },
+  "keywords": [
+    "Icons",
+    "Android",
+    "iOS"
+  ],
+  "author": "Mattia Longhin <mattia@appunto.io>",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/appunto-io/yair/issues"
+  },
+  "homepage": "https://github.com/appunto-io/yair#readme"
+}
