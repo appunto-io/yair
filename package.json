@@ -2,7 +2,7 @@
   "name": "@appunto/yair",
   "version": "0.0.1",
   "description": "Yet Another Icon Resizer",
-  "main": "src/index.js",
+  "main": "yair.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -20,5 +20,9 @@
   "bugs": {
     "url": "https://github.com/appunto-io/yair/issues"
   },
-  "homepage": "https://github.com/appunto-io/yair#readme"
+  "homepage": "https://github.com/appunto-io/yair#readme",
+  "dependencies": {
+    "jimp": "^0.6.4",
+    "yargs": "^13.2.4"
+  }
 }
