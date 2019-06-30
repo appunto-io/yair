@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/appunto-io/yair#readme",
   "dependencies": {
+    "cli-progress": "^2.1.1",
     "jimp": "^0.6.4",
     "yargs": "^13.2.4"
   }

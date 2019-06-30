@@ -103,8 +103,9 @@ const IOS_RESOLUTIONS = [
 ];
 
 // yair <source-image> [<output-directory>] --masks <mask-directory>
-const jimp = require('jimp');
-const fs   = require('fs');
+const jimp        = require('jimp');
+const fs          = require('fs');
+const CliProgress = require('cli-progress');
 
 const yargs = require('yargs')
   .locale('en')
@@ -173,6 +174,13 @@ Test if output directory is empty
 // }
 
 
+/*
+Initialize progress bar
+ */
+const progressBar = new CliProgress.Bar({});
+progressBar.start((ANDROID_RESOLUTIONS.length + IOS_RESOLUTIONS.length)*(masks.length + 1));
+
+
 
 const processAndroidIcons = async (image, name) => {
   fs.mkdirSync(`${output}/Android/${name}`);
@@ -185,6 +193,8 @@ const processAndroidIcons = async (image, name) => {
     await clonedImage
       .resize(resolution.size, resolution.size)
       .writeAsync(`${output}/Android/${name}/res/${resolution.path}/ic_launcher.png`);
+
+    progressBar.increment();
   }
 };
 
@@ -199,6 +209,8 @@ const processIosIcons = async (image, name) => {
     await clonedImage
       .resize(resolution.size*resolution.scale, resolution.size*resolution.scale)
       .writeAsync(`${output}/iOS/${name}.appiconset/${resolution.filename}`);
+
+    progressBar.increment();
   }
 
   fs.copyFileSync(`${__dirname}/Contents.json`, `${output}/iOS/${name}.appiconset/Contents.json`);
@@ -236,7 +248,7 @@ Execute resizer program
   /*
   First export a resized copy of image without masks
    */
-  processImage(sourceImage, 'default');
+  await processImage(sourceImage, 'default');
 
   for (let maskIndex in masksImages) {
     const maskImage   = masksImages[maskIndex];
@@ -248,13 +260,8 @@ Execute resizer program
         0, 0
       );
 
-    processImage(imageWithMask, 'composite'+maskIndex);
+    await processImage(imageWithMask, 'composite'+maskIndex);
   }
 
-
-
+  progressBar.stop();
 })()
-
-
-
-// const source = jimp(source)
