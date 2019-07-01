@@ -10,96 +10,24 @@ const ANDROID_RESOLUTIONS = [
 ];
 
 const IOS_RESOLUTIONS = [
-  {
-    size : 20,
-    filename : "icon-20@2x.png",
-    scale : 2
-  },
-  {
-    size : 20,
-    filename : "icon-20@3x.png",
-    scale : 3
-  },
-  {
-    size : 29,
-    filename : "icon-29@2x.png",
-    scale : 2
-  },
-  {
-    size : 29,
-    filename : "icon-29@3x.png",
-    scale : 3
-  },
-  {
-    size : 40,
-    filename : "icon-40@2x.png",
-    scale : 2
-  },
-  {
-    size : 40,
-    filename : "icon-40@3x.png",
-    scale : 3
-  },
-  {
-    size : 60,
-    filename : "icon-60@2x.png",
-    scale : 2
-  },
-  {
-    size : 60,
-    filename : "icon-60@3x.png",
-    scale : 3
-  },
-  {
-    size : 20,
-    filename : "icon-20.png",
-    scale : 1
-  },
-  {
-    size : 20,
-    filename : "icon-20@2x.png",
-    scale : 2
-  },
-  {
-    size : 29,
-    filename : "icon-29.png",
-    scale : 1
-  },
-  {
-    size : 29,
-    filename : "icon-29@2x.png",
-    scale : 2
-  },
-  {
-    size : 40,
-    filename : "icon-40.png",
-    scale : 1
-  },
-  {
-    size : 40,
-    filename : "icon-40@2x.png",
-    scale : 2
-  },
-  {
-    size : 76,
-    filename : "icon-76.png",
-    scale : 1
-  },
-  {
-    size : 76,
-    filename : "icon-76@2x.png",
-    scale : 2
-  },
-  {
-    size : 83.5,
-    filename : "icon-83.5@2x.png",
-    scale : 2
-  },
-  {
-    size : 1024,
-    filename : "icon.png",
-    scale : 1
-  }
+  {size : 20,   filename : "icon-20@2x.png",   scale : 2},
+  {size : 20,   filename : "icon-20@3x.png",   scale : 3},
+  {size : 29,   filename : "icon-29@2x.png",   scale : 2},
+  {size : 29,   filename : "icon-29@3x.png",   scale : 3},
+  {size : 40,   filename : "icon-40@2x.png",   scale : 2},
+  {size : 40,   filename : "icon-40@3x.png",   scale : 3},
+  {size : 60,   filename : "icon-60@2x.png",   scale : 2},
+  {size : 60,   filename : "icon-60@3x.png",   scale : 3},
+  {size : 20,   filename : "icon-20.png",      scale : 1},
+  {size : 20,   filename : "icon-20@2x.png",   scale : 2},
+  {size : 29,   filename : "icon-29.png",      scale : 1},
+  {size : 29,   filename : "icon-29@2x.png",   scale : 2},
+  {size : 40,   filename : "icon-40.png",      scale : 1},
+  {size : 40,   filename : "icon-40@2x.png",   scale : 2},
+  {size : 76,   filename : "icon-76.png",      scale : 1},
+  {size : 76,   filename : "icon-76@2x.png",   scale : 2},
+  {size : 83.5, filename : "icon-83.5@2x.png", scale : 2},
+  {size : 1024, filename : "icon.png",         scale : 1}
 ];
 
 // yair <source-image> [<output-directory>] --masks <mask-directory>
@@ -123,8 +51,8 @@ const yargs = require('yargs')
     default     : ['png'],
     type        : 'array'
   })
-  .options('overwrite', {
-    description : 'Replace existing files',
+  .options('react-native', {
+    description : 'Output directory is a ReactNative project',
     default     : false,
     type        : 'boolean'
   })
@@ -138,7 +66,40 @@ const [source, output = '.'] = yargs._ || [];
 const masksDirectory = yargs.m;
 const extensions     = yargs.e;
 const overwrite      = yargs.overwrite;
+const isReactNative  = yargs['react-native'];
 
+const getAndroidPath = name =>
+  isReactNative ?
+    `${output}/android/app/src/${name}/res/` :
+    `${output}/android/${name}/`;
+
+const getIosPath = name =>
+  isReactNative ?
+    `${output}/ios/${getIosProjectName(output)}/Images.xcassets/${name}.appiconset/` :
+    `${output}/ios/${name}/`;
+
+const getIosProjectName = (() => {
+  let projectName = '';
+
+  return projectPath => {
+    if (projectName) {
+      return projectName;
+    }
+
+    try {
+      projectName = (
+        fs.readdirSync(`${output}/ios/`)
+        .filter(file => file.endsWith('xcodeproj'))[0] || ''
+      ).split('.')[0];
+    }
+    catch(error) {
+      console.error("Unable to read ios directory.\nBe sure that distination dir is a ReactNative project or remove the --react-native flag.");
+      process.exit(1);
+    }
+
+    return projectName;
+  }
+})();
 
 /*
 Scanning masks directory
@@ -165,10 +126,10 @@ if (!fs.existsSync(output) || !fs.statSync(output).isDirectory() ) {
   process.exit(1);
 }
 
-/*
-Test if output directory is empty
- */
-// if (!overwrite && !fs.readdirSync(output).length) {
+// /*
+// Test if output directory is empty
+//  */
+// if (!reactNative && !fs.readdirSync(output).length) {
 //   console.error("Output diretory is not empty");
 //   process.exit(1);
 // }
@@ -183,7 +144,7 @@ progressBar.start((ANDROID_RESOLUTIONS.length + IOS_RESOLUTIONS.length)*(masks.l
 
 
 const processAndroidIcons = async (image, name) => {
-  fs.mkdirSync(`${output}/Android/${name}`);
+  // fs.mkdirSync(getAndroidPath(name), {recursive : true});
 
   for (let index = 0; index < ANDROID_RESOLUTIONS.length; index++) {
     const resolution = ANDROID_RESOLUTIONS[index];
@@ -192,14 +153,14 @@ const processAndroidIcons = async (image, name) => {
 
     await clonedImage
       .resize(resolution.size, resolution.size)
-      .writeAsync(`${output}/Android/${name}/res/${resolution.path}/ic_launcher.png`);
+      .writeAsync(`${getAndroidPath(name)}/${resolution.path}/ic_launcher.png`);
 
     progressBar.increment();
   }
 };
 
 const processIosIcons = async (image, name) => {
-  fs.mkdirSync(`${output}/iOS/${name}.appiconset`);
+  // fs.mkdirSync(getIosPath(name), {recursive : true});
 
   for (let index = 0; index < IOS_RESOLUTIONS.length; index++) {
     const resolution = IOS_RESOLUTIONS[index];
@@ -208,12 +169,12 @@ const processIosIcons = async (image, name) => {
 
     await clonedImage
       .resize(resolution.size*resolution.scale, resolution.size*resolution.scale)
-      .writeAsync(`${output}/iOS/${name}.appiconset/${resolution.filename}`);
+      .writeAsync(`${getIosPath(name)}/${resolution.filename}`);
 
     progressBar.increment();
   }
 
-  fs.copyFileSync(`${__dirname}/Contents.json`, `${output}/iOS/${name}.appiconset/Contents.json`);
+  fs.copyFileSync(`${__dirname}/Contents.json`, `${getIosPath(name)}/Contents.json`);
 };
 
 const processImage = async (image, name) => {
@@ -226,8 +187,8 @@ const processImage = async (image, name) => {
 Execute resizer program
  */
 (async () => {
-  fs.mkdirSync(`${output}/iOS`);
-  fs.mkdirSync(`${output}/Android`);
+  // fs.mkdirSync(`${output}/iOS`);
+  // fs.mkdirSync(`${output}/Android`);
 
   const images = await Promise.all([
     jimp.read(source),
