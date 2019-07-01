@@ -33,7 +33,10 @@ const IOS_RESOLUTIONS = [
 // yair <source-image> [<output-directory>] --masks <mask-directory>
 const jimp        = require('jimp');
 const fs          = require('fs');
+const path        = require('path');
 const CliProgress = require('cli-progress');
+const camelCase   = require('lodash.camelcase');
+const upperFirst  = require('lodash.upperfirst');
 
 const yargs = require('yargs')
   .locale('en')
@@ -51,6 +54,11 @@ const yargs = require('yargs')
     default     : ['png'],
     type        : 'array'
   })
+  .options('default-variants', {
+    description : 'Use defaults masks to create icon variants',
+    default     : false,
+    type        : 'boolean'
+  })
   .options('react-native', {
     description : 'Output directory is a ReactNative project',
     default     : false,
@@ -63,20 +71,24 @@ const yargs = require('yargs')
 Parsed arguments
  */
 const [source, output = '.'] = yargs._ || [];
-const masksDirectory = yargs.m;
-const extensions     = yargs.e;
-const overwrite      = yargs.overwrite;
-const isReactNative  = yargs['react-native'];
+const defaultVariants = yargs['default-variants'];
+const masksDirectory  = defaultVariants ? `${__dirname}/masks` : yargs.m;
+const extensions      = yargs.e;
+const overwrite       = yargs.overwrite;
+const isReactNative   = yargs['react-native'];
 
+/*
+Hanle ios and android paths
+ */
 const getAndroidPath = name =>
   isReactNative ?
-    `${output}/android/app/src/${name}/res/` :
-    `${output}/android/${name}/`;
+    `${output}/android/app/src/${name.toLowerCase()}/res/` :
+    `${output}/android/${name.toLowerCase()}/`;
 
 const getIosPath = name =>
   isReactNative ?
-    `${output}/ios/${getIosProjectName(output)}/Images.xcassets/${name}.appiconset/` :
-    `${output}/ios/${name}/`;
+    `${output}/ios/${getIosProjectName(output)}/Images.xcassets/${upperFirst(camelCase(name))}.appiconset/` :
+    `${output}/ios/${upperFirst(camelCase(name))}.appiconsets/`;
 
 const getIosProjectName = (() => {
   let projectName = '';
@@ -110,7 +122,11 @@ if (masksDirectory) {
     masks = fs.readdirSync(masksDirectory)
       .map(file => `${masksDirectory}/${file}`)
       .filter(file => fs.statSync(file).isFile())
-      .filter(file => extensions.some(extension => file.endsWith(extension)));
+      .filter(file => extensions.some(extension => file.endsWith(extension)))
+      .map(file => ({
+        name : path.basename(file, path.extname(file)),
+        file
+      }))
   }
   catch(error) {
     console.error("Unable to scan masks directory. Error ", error);
@@ -125,15 +141,6 @@ if (!fs.existsSync(output) || !fs.statSync(output).isDirectory() ) {
   console.error("Output parameter is not a directory");
   process.exit(1);
 }
-
-// /*
-// Test if output directory is empty
-//  */
-// if (!reactNative && !fs.readdirSync(output).length) {
-//   console.error("Output diretory is not empty");
-//   process.exit(1);
-// }
-
 
 /*
 Initialize progress bar
@@ -178,8 +185,11 @@ const processIosIcons = async (image, name) => {
 };
 
 const processImage = async (image, name) => {
-  await processAndroidIcons(image, name);
-  await processIosIcons(image, name);
+  const androidName = name.android || name;
+  const iosName     = name.ios     || name;
+
+  await processAndroidIcons(image, androidName);
+  await processIosIcons(image, iosName);
 };
 
 
@@ -193,7 +203,7 @@ Execute resizer program
   const images = await Promise.all([
     jimp.read(source),
     ...masks.map(
-      mask => jimp.read(mask)
+      ({file}) => jimp.read(file)
     )
   ]);
 
@@ -209,10 +219,11 @@ Execute resizer program
   /*
   First export a resized copy of image without masks
    */
-  await processImage(sourceImage, 'default');
+  await processImage(sourceImage, {ios : 'AppIcon', android : 'main'});
 
   for (let maskIndex in masksImages) {
-    const maskImage   = masksImages[maskIndex];
+    const maskImage = masksImages[maskIndex];
+    const maskName  = masks[maskIndex].name
 
     const imageWithMask = sourceImage
       .clone()
@@ -221,7 +232,7 @@ Execute resizer program
         0, 0
       );
 
-    await processImage(imageWithMask, 'composite'+maskIndex);
+    await processImage(imageWithMask, maskName);
   }
 
   progressBar.stop();
