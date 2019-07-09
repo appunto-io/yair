@@ -40,6 +40,7 @@ const upperFirst  = require('lodash.upperfirst');
 
 const yargs = require('yargs')
   .locale('en')
+  .usage('Usage: $0 <source-image> <output-directory> [options]')
   .help()
   .demandCommand()
   .option('m', {
