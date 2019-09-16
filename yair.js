@@ -89,7 +89,7 @@ const getAndroidPath = name =>
 const getIosPath = name =>
   isReactNative ?
     `${output}/ios/${getIosProjectName(output)}/Images.xcassets/${upperFirst(camelCase(name))}.appiconset/` :
-    `${output}/ios/${upperFirst(camelCase(name))}.appiconsets/`;
+    `${output}/ios/${upperFirst(camelCase(name))}.appiconset/`;
 
 const getIosProjectName = (() => {
   let projectName = '';
