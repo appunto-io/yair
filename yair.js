@@ -74,6 +74,7 @@ Parsed arguments
 const [source, output = '.'] = yargs._ || [];
 const defaultVariants = yargs['default-variants'];
 const masksDirectory  = defaultVariants ? `${__dirname}/masks` : yargs.m;
+const roundMaskFile   = `${__dirname}/round_mask.png`;
 const extensions      = yargs.e;
 const overwrite       = yargs.overwrite;
 const isReactNative   = yargs['react-native'];
@@ -136,6 +137,11 @@ if (masksDirectory) {
 }
 
 /*
+Android round icon mask
+ */
+let roundMask;
+
+/*
 Test if output directory is writable
  */
 if (!fs.existsSync(output) || !fs.statSync(output).isDirectory() ) {
@@ -158,10 +164,17 @@ const processAndroidIcons = async (image, name) => {
     const resolution = ANDROID_RESOLUTIONS[index];
 
     const clonedImage = image.clone();
+    const clonedRoundMask = roundMask.clone();
+
+    await clonedRoundMask.resize(resolution.size, resolution.size);
 
     await clonedImage
       .resize(resolution.size, resolution.size)
       .writeAsync(`${getAndroidPath(name)}/${resolution.path}/ic_launcher.png`);
+
+    await clonedImage
+      .mask(clonedRoundMask)
+      .writeAsync(`${getAndroidPath(name)}/${resolution.path}/ic_launcher_round.png`);
 
     progressBar.increment();
   }
@@ -207,6 +220,8 @@ Execute resizer program
       ({file}) => jimp.read(file)
     )
   ]);
+
+  roundMask = await jimp.read(roundMaskFile);
 
   const [sourceImage, ...masksImages] = images;
 
