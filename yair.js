@@ -85,7 +85,7 @@ Hanle ios and android paths
 const getAndroidPath = name =>
   isReactNative ?
     `${output}/android/app/src/${name.toLowerCase()}/res/` :
-    `${output}/android/${name.toLowerCase()}/`;
+    `${output}/android/${name.toLowerCase()}/res/`;
 
 const getIosPath = name =>
   isReactNative ?
@@ -157,8 +157,10 @@ progressBar.start((ANDROID_RESOLUTIONS.length + IOS_RESOLUTIONS.length)*(masks.l
 
 
 
-const processAndroidIcons = async (image, name) => {
+const processAndroidIcons = async (image, flavour, buildType) => {
   // fs.mkdirSync(getAndroidPath(name), {recursive : true});
+
+  buildType = buildType ? `_${buildType.toLowerCase()}` : '';
 
   for (let index = 0; index < ANDROID_RESOLUTIONS.length; index++) {
     const resolution = ANDROID_RESOLUTIONS[index];
@@ -170,11 +172,11 @@ const processAndroidIcons = async (image, name) => {
 
     await clonedImage
       .resize(resolution.size, resolution.size)
-      .writeAsync(`${getAndroidPath(name)}/${resolution.path}/ic_launcher.png`);
+      .writeAsync(`${getAndroidPath(flavour)}/${resolution.path}/ic_launcher${buildType}.png`);
 
     await clonedImage
       .mask(clonedRoundMask)
-      .writeAsync(`${getAndroidPath(name)}/${resolution.path}/ic_launcher_round.png`);
+      .writeAsync(`${getAndroidPath(flavour)}/${resolution.path}/ic_launcher_round${buildType}.png`);
 
     progressBar.increment();
   }
@@ -199,10 +201,11 @@ const processIosIcons = async (image, name) => {
 };
 
 const processImage = async (image, name) => {
-  const androidName = name.android || name;
-  const iosName     = name.ios     || name;
+  const androidName = name.android;
+  const iosName     = name.ios;
+  const [androidFlavour, androidBuildType] = androidName;
 
-  await processAndroidIcons(image, androidName);
+  await processAndroidIcons(image, androidFlavour, androidBuildType);
   await processIosIcons(image, iosName);
 };
 
@@ -235,7 +238,7 @@ Execute resizer program
   /*
   First export a resized copy of image without masks
    */
-  await processImage(sourceImage, {ios : 'AppIcon', android : 'main'});
+  await processImage(sourceImage, {ios : 'AppIcon', android : ['main']});
 
   for (let maskIndex in masksImages) {
     const maskImage = masksImages[maskIndex];
@@ -248,7 +251,7 @@ Execute resizer program
         0, 0
       );
 
-    await processImage(imageWithMask, maskName);
+    await processImage(imageWithMask, {ios : maskName, android : maskName.split('-')});
   }
 
   progressBar.stop();
